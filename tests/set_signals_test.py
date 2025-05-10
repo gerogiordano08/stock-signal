@@ -44,3 +44,5 @@ class TestGetTime(unittest.TestCase):
     def test_yn_invalid_returns_empty_string(self, patch_input):
         result = get_time()
         self.assertEqual(result, 0)
+
+        
