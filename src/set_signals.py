@@ -67,30 +67,35 @@ def get_slope(x1, y1, x2, y2):
 
 # plot_line() uses the slope and y_intersection from get_slope() and defines the affine function, and plots it.
 def plot_line(x, m, b):
-
     affine_y = [m * xi.toordinal() + b for xi in x]
     plt.plot(x, affine_y, label="Trend Line", linestyle= "--")
 
-def save_trendline(symbol, m, b, file_path="data/trendlines.json"):
+# save_trendline() opens the trendlines.json file and stores a dictionary with the symbol, label, slope and y_intersect of the trendline.
+def save_trendline(symbol, label, m, b, file_path="data/trendlines.json"):
     if os.path.exists:
         with open(file_path, "r") as f:
             trendlines = json.load(f)
     else:
         trendlines = {}
-    trendlines[symbol] = {
+    
+    if symbol not in trendlines:
+        trendlines[symbol] = {}
+    
+    trendlines[symbol][label] = {
         "m" : m, 
         "b" : b
     }
     with open(file_path, "w") as f:
         json.dump(trendlines, f, indent=4)
-    print(f"Trendline for {symbol} saved.")
+    print(f"Trendline '{label}'for {symbol} saved.")
 
-def compare_trendline_w_data(symbol, json_path="data/trendlines.json"):
+#compare_trendline_w_data() opens trendlines.json, traces the trendline, looks up for the actual_price, yesterday's price and today's close_price. Defines if today's price is higher than yesterday's, and follow some logic to define which type of touch is happening. It returns this type.
+def compare_trendline_w_data(symbol, label, json_path="data/trendlines.json"):
     with open(json_path, "r") as f:
         trendlines = json.load(f)
-
-    m = trendlines[symbol]["m"]
-    b = trendlines[symbol]["b"]
+    m = trendlines[symbol][label]["m"]
+    b = trendlines[symbol][label]["b"]
+    label = trendlines[symbol]
     today = datetime.today().toordinal()
     trendline_price = m*today + b
     symbol_data = yf.download(symbol, period="2d", interval="1d", progress=False)

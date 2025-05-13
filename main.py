@@ -5,7 +5,7 @@ def run():
     stockname = ""
     time_take_account = 0
     username = input("What's your name? ")
-    
+    label = ""
     while stockname == "":
         stockname = register_stockname(username)
     while time_take_account == 0:
@@ -23,13 +23,17 @@ def run():
     save_yn = input("Save?(y/n) ").lower()
     
     if save_yn == 'y':
-        save_trendline(stockname, m, b)
+        while label == "":
+            label = input("Enter a label for this trendline.")
+        save_trendline(stockname, label, m, b)
     else:
         sure_yn = input("Are you sure? The program will close!(y/n) ")
         if sure_yn == 'y':
             sys.exit("Exiting")
         else:
-            save_trendline(stockname, m, b)
+            while label == "":
+                label = input("Enter a label for this trendline.")
+            save_trendline(stockname, label, m, b)
 
 if __name__ == "__main__":
     run()
