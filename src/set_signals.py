@@ -1,13 +1,16 @@
 import yfinance as yf
 import matplotlib.pyplot as plt
 from datetime import datetime
+import json
+import os
+import pandas as pd
 
 username = "username"
 stockname = ""
 time_take_account = 0
 
 # register_stockname() asks the user for the stockname and returns it. Its used to define 'stockname'.
-def register_stockname():
+def register_stockname(username):
     user_input = input(f"Well, hello {username}, which stock are you interested in? Just write the official abreviation. ").upper()
     verification_stock_name = input(f"You entered: {user_input}. Is that right?(y/n) ").lower()
     
@@ -36,12 +39,13 @@ def get_stock_data(s_name, s_time):
     return data.index, data["Low"]
 
 # plot_chart() uses 'x' and 'y' to plot a chart and a function with data(prices) from a stock.
-def plot_chart():
+def plot_chart(x, y):
     plt.plot(x, y, marker = '')
     plt.xlabel("Day")
     plt.ylabel("Price (pesos)")
     plt.title("Lows chart")
     plt.grid(True)
+    plt.suptitle("Close and go back to console to choose whether to save. ", fontsize=10, color="gray")
 
 #get_points() asks the user for the coordinates of two points of a trend line(already drawn in Trendview) and returns the coordinates as values.
 def get_points():
@@ -62,25 +66,52 @@ def get_slope(x1, y1, x2, y2):
     return slope, y_inter
 
 # plot_line() uses the slope and y_intersection from get_slope() and defines the affine function, and plots it.
-def plot_line():
-    x1, y1, x2, y2 = get_points()
-    m, b = get_slope(x1, y1, x2, y2)
+def plot_line(x, m, b):
+
     affine_y = [m * xi.toordinal() + b for xi in x]
     plt.plot(x, affine_y, label="Trend Line", linestyle= "--")
-    
-if __name__ == "__main__":
-    username = input("What's your name? ")
-    
-    while stockname == "":
-        stockname = register_stockname()
-    while time_take_account == 0:
-        time_take_account = get_time()
-    
-    months = f"{time_take_account}mo"
 
-    x, y = get_stock_data(stockname, months)
-    plot_chart()
-    plot_line()
-    plt.show()
+def save_trendline(symbol, m, b, file_path="data/trendlines.json"):
+    if os.path.exists:
+        with open(file_path, "r") as f:
+            trendlines = json.load(f)
+    else:
+        trendlines = {}
+    trendlines[symbol] = {
+        "m" : m, 
+        "b" : b
+    }
+    with open(file_path, "w") as f:
+        json.dump(trendlines, f, indent=4)
+    print(f"Trendline for {symbol} saved.")
 
+def compare_trendline_w_data(symbol, json_path="data/trendlines.json"):
+    with open(json_path, "r") as f:
+        trendlines = json.load(f)
 
+    m = trendlines[symbol]["m"]
+    b = trendlines[symbol]["b"]
+    today = datetime.today().toordinal()
+    trendline_price = m*today + b
+    symbol_data = yf.download(symbol, period="2d", interval="1d", progress=False)
+
+    actual_price = symbol_data["Low"].iloc[1].item()
+    yest_price = symbol_data["Low"].iloc[0].item()
+    close_price = symbol_data["Close"].iloc[1].item()
+
+    higher_than_yest = False
+    if yest_price < actual_price:
+        higher_than_yest = True
+
+    dif_1 = actual_price - trendline_price
+    dif_2 = trendline_price - actual_price
+    cercania = pd.to_numeric(close_price * 0.009)
+
+    if 0 < dif_1 <= cercania and higher_than_yest == False:
+        return "tocando-arriba"
+    elif 0 < dif_1 <= cercania and higher_than_yest:
+        return "cruzo-p-arriba"
+    elif 0 < dif_2 <= cercania and higher_than_yest:
+        return "tocando-abajo"
+    elif 0 < dif_2 <= cercania and higher_than_yest == False:
+        return "cruzo-p-abajo"

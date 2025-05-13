@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 from src.set_signals import register_stockname, get_time
+from main import run
 
 class TestRegisterStockname(unittest.TestCase):
     
@@ -45,4 +46,12 @@ class TestGetTime(unittest.TestCase):
         result = get_time()
         self.assertEqual(result, 0)
 
-        
+
+class TestTrendlineSave(unittest.TestCase):
+    @patch("matplotlib.pyplot.show")
+    @patch('builtins.input', side_effect=["geronimo", "aapl", "y", "12", "y", "2024-10-22", "187", "2025-05-12", "209", "y" ])
+    def test_run_creates_trendline(self, mock_input, mock_show):
+        run() 
+
+if __name__ == "__main__":
+    unittest.main()
